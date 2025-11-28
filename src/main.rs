@@ -1,5 +1,5 @@
-use std::{fmt, io};
-use std::io::{BufReader, BufRead};
+use std::{char, fmt, io};
+use std::io::{BufReader, BufRead, stdout, Write};
 use std::fs::{read, read_to_string, File};
 use std::env::args;
 use std::fmt::{write, Formatter};
@@ -82,7 +82,7 @@ struct Token {
 }
 
 impl Token {
-    fn new(&self,
+    fn new(
            ttype: TokenType,
            lexeme: String,
            literal: Option<LiteralObject>,
@@ -141,8 +141,48 @@ impl Scanner {
     fn is_end(&self) -> bool {
         self.current >= self.source.len()
     }
-    fn scan_tokens(&self) {
-        todo!()
+    fn advance(&mut self) -> Result<char, PneumaError> {
+        if let Some(c) = self.source.chars().nth(self.current) {
+            self.current += 1;
+            Ok(c)
+        }else{
+            Err(
+                PneumaError {
+                    line: self.current,
+                    message: "Out of index".to_string(),
+                }
+            )
+        }
+
+    }
+
+    fn add_token(&mut self, ttype: TokenType, literal: Option<LiteralObject>) -> Result<(), PneumaError> {
+        let lexeme: String = self.source[self.start..self.current].to_string();
+        self.tokens.push(
+            Token::new(ttype, lexeme, literal, self.line)
+        );
+        Ok(())
+    }
+    fn scan_tokens(&mut self) -> Result<(), PneumaError>{
+        let c = self.advance()?;
+        match c {
+            '(' => self.add_token(TokenType::LeftParen, None),
+            ')' => self.add_token(TokenType::RightParen, None),
+            '{' => self.add_token(TokenType::LeftBrace, None),
+            '}' => self.add_token(TokenType::RightBrace, None),
+            ',' => self.add_token(TokenType::Comma, None),
+            '.' => self.add_token(TokenType::Dot, None),
+            '-' => self.add_token(TokenType::Minus, None),
+            '+' => self.add_token(TokenType::Plus, None),
+            ';' => self.add_token(TokenType::Semicolon, None),
+            '*' => self.add_token(TokenType::Star, None),
+            _ => Err(
+                PneumaError {
+                    line: self.line,
+                    message: "Unexpected Character".to_string()
+                }
+            )
+        }
     }
     fn generate_tokens(&mut self) -> Result<bool, PneumaError> {
         while self.is_end() == false {
@@ -198,7 +238,8 @@ fn run_file(filename: String) -> io::Result<()> {
 
 fn run_shell() {
     let stdin = io::stdin();
-    println!("pn>");
+    print!("pn> ");
+    let _ = stdout().flush().expect("Failed to flush stdout");
     for line in stdin.lock().lines() {
         if let Ok(li) = line {
             if li.is_empty() {
@@ -213,6 +254,8 @@ fn run_shell() {
         } else {
             break;
         }
+        print!("pn> ");
+        let _ = stdout().flush().expect("Failed to flush stdout");
 
     }
 }
