@@ -127,7 +127,6 @@ struct Scanner {
 
 impl Scanner {
     fn new(
-        &self,
         source: String,
     ) -> Self {
         Scanner {
@@ -187,10 +186,18 @@ impl Scanner {
     fn generate_tokens(&mut self) -> Result<bool, PneumaError> {
         while self.is_end() == false {
             self.start = self.current;
-            let _ =self.scan_tokens();
+            match self.scan_tokens() {
+                Ok(_) => {}
+                Err(e) => {
+                    e.report();
+                }
+            }
         }
         self.tokens.push(Token::eof(self.line));
         Ok(true)
+    }
+    fn is_match(&self) {
+        todo!()
     }
 }
 
@@ -226,7 +233,7 @@ fn main() {
 
 fn run_file(filename: String) -> io::Result<()> {
     let buf = read_to_string(filename)?;
-    match run(buf.as_str()) {
+    match run(buf) {
         Ok(_) => {},
         Err(e) => {
             e.report();
@@ -245,7 +252,7 @@ fn run_shell() {
             if li.is_empty() {
                 break;
             }
-            match run(li.as_str()) {
+            match run(li) {
                 Ok(_) => {},
                 Err(e)=> {
                     e.report()
@@ -260,7 +267,11 @@ fn run_shell() {
     }
 }
 
-fn run(source: &str) -> Result<String, PneumaError>{
-    Ok("fine".to_string())
-
+fn run(source: String) -> Result<(), PneumaError>{
+    let mut scanner = Scanner::new(source);
+    let status = scanner.generate_tokens()?;
+    for t in scanner.tokens {
+        println!("{:#?}", t);
+    }
+    Ok(())
 }
