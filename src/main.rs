@@ -162,6 +162,12 @@ impl Scanner {
         );
         Ok(())
     }
+    fn peek(&self) -> Option<char> {
+        if self.is_end() {
+            return Some('\0')
+        };
+        self.source.chars().nth(self.current)
+    }
     fn scan_tokens(&mut self) -> Result<(), PneumaError>{
         let c = self.advance()?;
         match c {
@@ -175,6 +181,44 @@ impl Scanner {
             '+' => self.add_token(TokenType::Plus, None),
             ';' => self.add_token(TokenType::Semicolon, None),
             '*' => self.add_token(TokenType::Star, None),
+            '!' => {
+                if self.is_second_match('=')? {
+                    self.add_token(TokenType::BangEqual, None)
+                } else {
+                    self.add_token(TokenType::Bang, None)
+                }
+            },
+            '=' => {
+                if self.is_second_match('=')? {
+                    self.add_token(TokenType::EqualEqual, None)
+                } else {
+                    self.add_token(TokenType::Equal, None)
+                }
+            },
+            '<' => {
+                if self.is_second_match('=')? {
+                    self.add_token(TokenType::LessEqual, None)
+                } else {
+                    self.add_token(TokenType::Less, None)
+                }
+            },
+            '>' => {
+                if self.is_second_match('=')? {
+                    self.add_token(TokenType::GreaterEqual, None)
+                } else {
+                    self.add_token(TokenType::Greater, None)
+                }
+            },
+            '/' => {
+                if self.is_second_match('/')? {
+                    while self.peek() != Option::from('\n') && !self.is_end(){
+                        self.advance()?;
+                    }
+                    Ok(())
+                } else {
+                    self.add_token(TokenType::Slash, None)
+                }
+            },
             _ => Err(
                 PneumaError {
                     line: self.line,
@@ -196,8 +240,18 @@ impl Scanner {
         self.tokens.push(Token::eof(self.line));
         Ok(true)
     }
-    fn is_match(&self) {
-        todo!()
+    fn is_second_match(&mut self, expected: char) -> Result<bool, PneumaError>{
+        if self.is_end(){
+            return Ok(false)
+        }
+        if let Some(current_c) = self.source.chars().nth(self.current){
+            if current_c != expected{
+                return Ok(false)
+            }
+        }
+        self.current += 1;
+        Ok(true)
+
     }
 }
 
