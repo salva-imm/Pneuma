@@ -116,6 +116,7 @@ impl fmt::Display for Token {
     }
 }
 
+#[derive(Debug)]
 struct Scanner {
     source: String,
     tokens: Vec<Token>,
@@ -219,6 +220,14 @@ impl Scanner {
                     self.add_token(TokenType::Slash, None)
                 }
             },
+            ' ' | '\t' | '\r' => {Ok(())},
+            '\n' => {
+              self.line += 1;
+                Ok(())
+            },
+            '"' => {
+                self.string()
+            }
             _ => Err(
                 PneumaError {
                     line: self.line,
@@ -226,6 +235,9 @@ impl Scanner {
                 }
             )
         }
+    }
+    fn string(&self) -> Result<(),PneumaError>{
+        todo!()
     }
     fn generate_tokens(&mut self) -> Result<bool, PneumaError> {
         while self.is_end() == false {
@@ -303,9 +315,9 @@ fn run_shell() {
     let _ = stdout().flush().expect("Failed to flush stdout");
     for line in stdin.lock().lines() {
         if let Ok(li) = line {
-            if li.is_empty() {
-                break;
-            }
+            // if li.is_empty() {
+            //     break;
+            // }
             match run(li) {
                 Ok(_) => {},
                 Err(e)=> {
@@ -323,9 +335,10 @@ fn run_shell() {
 
 fn run(source: String) -> Result<(), PneumaError>{
     let mut scanner = Scanner::new(source);
-    let status = scanner.generate_tokens()?;
-    for t in scanner.tokens {
-        println!("{:#?}", t);
-    }
+    let _status = scanner.generate_tokens()?;
+    println!("{:#?}", &scanner);
+    // for t in &scanner.tokens {
+    //     println!("{:#?}", t);
+    // }
     Ok(())
 }
