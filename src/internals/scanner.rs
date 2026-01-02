@@ -61,6 +61,12 @@ impl Scanner {
         };
         self.source.chars().nth(self.current)
     }
+    fn peek_next(&self) -> Option<char> {
+        if self.current + 1 >= self.source.len() {
+            return Some('\0')
+        }
+        self.source.chars().nth(self.current+1)
+    }
     fn scan_tokens(&mut self) -> Result<(), PneumaError>{
         let c = self.advance()?;
         match c {
@@ -119,7 +125,10 @@ impl Scanner {
             },
             '"' => {
                 self.string()
-            }
+            },
+            '0'..='9' => {
+                self.number()
+            },
             _ => Err(
                 PneumaError {
                     line: self.line,
@@ -128,7 +137,7 @@ impl Scanner {
             )
         }
     }
-    fn string(&mut self) -> Result<(),PneumaError>{
+    fn string(&mut self) -> Result<(),PneumaError> {
         while self.peek() != Option::from('"') && !self.is_end() {
             if self.peek() == Option::from('\n') {
                 self.line += 1
@@ -159,7 +168,28 @@ impl Scanner {
         self.tokens.push(Token::eof(self.line));
         Ok(true)
     }
-    fn is_second_match(&mut self, expected: char) -> Result<bool, PneumaError>{
+    fn number(&mut self) -> Result<(), PneumaError> {
+        while self.is_digit(self.peek().unwrap()) {
+            let _ = self.advance();
+        }
+        if self.peek() == Option::from('.') && self.is_digit(self.peek_next().unwrap()){
+            let _ = self.advance();
+            while self.is_digit(self.peek().unwrap()) {
+                let _ = self.advance();
+            }
+        }
+        let number_value = self.source[self.start..self.current].to_string();
+        let num = number_value.parse::<f64>().unwrap();
+        let _ =self.add_token(TokenType::Number, Some(LiteralObject::Num(num)));
+        Ok(())
+    }
+    fn is_digit(&self, c: char) -> bool {
+        if c >= '0' && c <= '9' {
+            return true;
+        }
+        false
+    }
+    fn is_second_match(&mut self, expected: char) -> Result<bool, PneumaError> {
         if self.is_end(){
             return Ok(false)
         }

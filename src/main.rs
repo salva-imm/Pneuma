@@ -1,11 +1,10 @@
 mod internals;
 use internals::scanner::*;
 use internals::utils::*;
-use std::{char, fmt, io};
-use std::io::{BufReader, BufRead, stdout, Write};
-use std::fs::{read, read_to_string, File};
+use std::io;
+use std::io::{BufRead, stdout, Write};
+use std::fs::read_to_string;
 use std::env::args;
-use std::fmt::{write, Formatter};
 use std::process::exit;
 
 
