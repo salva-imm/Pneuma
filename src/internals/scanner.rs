@@ -129,12 +129,19 @@ impl Scanner {
             '0'..='9' => {
                 self.number()
             },
-            _ => Err(
-                PneumaError {
-                    line: self.line,
-                    message: "Unexpected Character".to_string()
+            _   => {
+                if c.is_ascii_alphanumeric() || c == '_' {
+                    self.is_identifier()
+                }else {
+                    Err(
+                        PneumaError {
+                            line: self.line,
+                            message: "Unexpected Character".to_string(),
+                        }
+                    )
                 }
-            )
+
+            }
         }
     }
     fn string(&mut self) -> Result<(),PneumaError> {
@@ -188,6 +195,13 @@ impl Scanner {
             return true;
         }
         false
+    }
+    fn is_identifier(&mut self) -> Result<(), PneumaError> {
+        while self.peek().unwrap().is_ascii_alphanumeric() {
+            let _ = self.advance();
+        }
+        let _ =self.add_token(TokenType::Identifier, Some(LiteralObject::None));
+        Ok(())
     }
     fn is_second_match(&mut self, expected: char) -> Result<bool, PneumaError> {
         if self.is_end(){
